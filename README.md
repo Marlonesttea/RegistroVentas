@@ -6,8 +6,8 @@ Aplicación personal en PHP y MySQL/MariaDB para administrar modelos, fotos, com
 
 1. Inicia **Apache** y **MySQL** desde el panel de XAMPP.
 2. Para una instalación nueva, abre phpMyAdmin e importa `schema.sql`.
-3. Si actualizas desde una versión anterior, respalda primero la base y ejecuta las migraciones pendientes en orden: `migration_v2.sql`, `migration_v3.sql` y `migration_v4.sql`. Ejecuta cada una una sola vez.
-4. Abre `http://localhost/RegistroVenta/`. El navbar separa **Inicio**, **Catálogo**, **Crear comanda** y **Comandas**.
+3. Si actualizas desde una versión anterior, respalda primero la base y ejecuta las migraciones pendientes en orden: `migration_v2.sql`, `migration_v3.sql`, `migration_v4.sql`, `migration_v5.sql` y `migration_v6.sql`. Ejecuta cada una una sola vez.
+4. Abre `http://localhost/RegistroVenta/`. El navbar separa **Inicio**, **Catálogo**, **Crear comanda**, **Comandas**, **Cálculo liquidación** y **Liquidado**.
 
 La conexión predeterminada usa `127.0.0.1`, base de datos `registro_ventas_zapatos`, usuario `root` y contraseña vacía, como en una instalación típica de XAMPP. Si tu instalación tiene otros datos, configura `DB_HOST`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` para Apache/PHP.
 
@@ -24,7 +24,10 @@ La migración consolida registros del mismo modelo y marca, mueve sus fotos e hi
 - Registra cada modelo una sola vez con marca, fotos, costo de compra por par y precio de venta por par. No se lleva stock.
 - Para una comanda, indica cuántos pares incluye. Cada par permite elegir su modelo, talla del 34 al 44 y “Ramoneado” Sí/No.
 - Completa nombre y celular del comprador, además del domicilio cobrado, el costo real del domicilio, dirección y barrio. El total se calcula con los modelos y el domicilio; puedes editar el total cobrado.
-- En **Comandas**, se muestran hasta las 1000 comandas más recientes. Puedes filtrar por nombre del comprador, fecha, número de comanda, estado, barrio o celular; se aplica un criterio a la vez.
+- En **Comandas**, se muestran hasta las 1000 comandas más recientes, agrupadas por fecha de creación. Puedes filtrar por nombre del comprador, fecha, número de comanda, estado, barrio o celular; se aplica un criterio a la vez.
+- Cada comanda nueva inicia con estado de liquidación **Pendiente por liquidar**. Puedes cambiarlo a **Liquidada** desde **Comandas**; las liquidadas aparecen también en **Liquidado** y permanecen en **Comandas**.
+- En **Cálculo liquidación**, selecciona hasta 1000 comandas pendientes para previsualizar lo cobrado, las ventas sin domicilio, las pérdidas por devoluciones y la ganancia neta. Al aceptar, quedan liquidadas y se registran con la fecha del cálculo.
+- En **Liquidado**, las comandas se agrupan por fecha de liquidación; cada grupo muestra pedidos, pares vendidos, recaudado y ganancia neta, junto con el resultado neto acumulado y las pérdidas por devoluciones.
 - Cada comanda muestra el resumen en columnas de cantidad, modelo y precio, junto con tallas, Ramoneado, domicilio y totales.
 - La ganancia neta se calcula como total cobrado menos el costo de compra de cada par y el costo real del domicilio. “Ramoneado” solo se guarda como recordatorio y no afecta el cálculo.
 - Cada comanda puede marcarse como **Vendido**, **Cancelado**, **Devuelto - pagó domicilio** o **Devuelto - no pagó domicilio**. Solo las vendidas cuentan como ingresos y pares vendidos; canceladas y devueltas con domicilio pagado suman $0 de ganancia. Una devolución sin domicilio pagado resta el costo real del domicilio como pérdida.

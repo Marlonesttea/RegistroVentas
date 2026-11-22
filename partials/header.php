@@ -15,7 +15,7 @@
 <header class="app-header">
     <div class="container header-content">
         <a class="brand-link" href="index.php">
-            <span class="brand-mark">Z</span>
+            <span class="brand-mark">M</span>
             <span><strong>Registro de zapatos</strong><small>Control personal</small></span>
         </a>
         <nav class="navbar" aria-label="Navegación principal">
@@ -23,6 +23,8 @@
             <a class="nav-link<?= $activePage === 'catalogo' ? ' active' : '' ?>" href="catalogo.php">Catálogo</a>
             <a class="nav-link<?= $activePage === 'crear' ? ' active' : '' ?>" href="crear_comanda.php">Crear comanda</a>
             <a class="nav-link<?= $activePage === 'comandas' ? ' active' : '' ?>" href="comandas.php">Comandas</a>
+            <a class="nav-link<?= $activePage === 'calculo-liquidacion' ? ' active' : '' ?>" href="calculo_liquidacion.php">Cálculo liquidación</a>
+            <a class="nav-link<?= $activePage === 'liquidado' ? ' active' : '' ?>" href="liquidado.php">Liquidado</a>
         </nav>
     </div>
 </header>
@@ -30,7 +32,7 @@
     <?php if ($databaseError !== ''): ?>
         <section class="notice notice-error">
             <h2>No se pudo cargar la base de datos</h2>
-            <p>Verifica que MySQL esté iniciado y que hayas importado <code>schema.sql</code> o ejecutado <code>migration_v2.sql</code>.</p>
+            <p>Verifica que MySQL esté iniciado y que hayas importado <code>schema.sql</code> o ejecutado las migraciones necesarias.</p>
             <details><summary>Detalle</summary><code><?= e($databaseError) ?></code></details>
         </section>
     <?php endif; ?>

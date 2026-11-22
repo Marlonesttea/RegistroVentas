@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/app.php';
+require __DIR__ . '/liquidation_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect_to('index.php');
@@ -10,7 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $action = (string) ($_POST['action'] ?? '');
 $redirectPage = in_array($action, ['save_product', 'delete_product', 'delete_photo'], true)
     ? 'catalogo.php'
-    : (in_array($action, ['create_sale', 'update_sale_status', 'delete_sale'], true) ? 'comandas.php' : 'index.php');
+    : (in_array(
+        $action,
+        ['create_sale', 'update_sale_status', 'update_liquidation_status', 'delete_sale'],
+        true
+    ) ? 'comandas.php' : 'index.php');
+if ($action === 'finalize_liquidation') {
+    $redirectPage = 'calculo_liquidacion.php';
+}
+if ($action === 'update_liquidation_status' && ($_POST['return_page'] ?? '') === 'liquidado.php') {
+    $redirectPage = 'liquidado.php';
+}
+if ($action === 'finalize_liquidation') {
+    $redirectPage = 'calculo_liquidacion.php';
+}
 
 try {
     if (!$pdo) {
@@ -244,6 +258,55 @@ try {
             }
         }
         set_flash('success', 'Estado actualizado: ' . $statusLabels[$status] . '.');
+    } elseif ($action === 'update_liquidation_status') {
+        $saleId = filter_var($_POST['sale_id'] ?? null, FILTER_VALIDATE_INT);
+        $liquidationStatus = (string) ($_POST['liquidation_status'] ?? '');
+        $liquidationLabels = [
+            'pending' => 'Pendiente por liquidar',
+            'liquidated' => 'Liquidada',
+        ];
+        if ($saleId === false || $saleId < 1 || !isset($liquidationLabels[$liquidationStatus])) {
+            throw new RuntimeException('Selecciona un estado de liquidación válido para la comanda.');
+        }
+        $update = $pdo->prepare(
+            "UPDATE sales SET liquidation_status = ?, liquidated_at = CASE WHEN ? = 'liquidated' THEN NOW() ELSE NULL END WHERE id = ?"
+        );
+        $update->execute([$liquidationStatus, $liquidationStatus, $saleId]);
+        if ($update->rowCount() === 0) {
+            $exists = $pdo->prepare('SELECT id FROM sales WHERE id = ?');
+            $exists->execute([$saleId]);
+            if (!$exists->fetch()) {
+                throw new RuntimeException('La comanda ya no existe.');
+            }
+        }
+        set_flash('success', 'Estado de liquidación actualizado: ' . $liquidationLabels[$liquidationStatus] . '.');
+    } elseif ($action === 'finalize_liquidation') {
+        $saleIds = parse_liquidation_sale_ids($_POST['sale_ids'] ?? null);
+        $pdo->beginTransaction();
+        try {
+            $pendingSales = load_pending_liquidation_sales($pdo, $saleIds, true);
+            $summary = calculate_liquidation_summary($pendingSales);
+            $placeholders = implode(',', array_fill(0, count($saleIds), '?'));
+            $update = $pdo->prepare(
+                "UPDATE sales SET liquidation_status = 'liquidated', liquidated_at = NOW()
+                WHERE liquidation_status = 'pending' AND id IN (" . $placeholders . ')'
+            );
+            $update->execute($saleIds);
+            if ($update->rowCount() !== $summary['order_count']) {
+                throw new RuntimeException('No se pudieron liquidar todas las comandas seleccionadas. Actualiza la página e inténtalo de nuevo.');
+            }
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+        set_flash(
+            'success',
+            'Liquidación registrada con ' . $summary['order_count'] . ' pedidos. Ganancia neta: ' .
+                format_liquidation_money($summary['net_profit_cents']) . '.'
+        );
     } elseif ($action === 'delete_sale') {
         $saleId = (int) ($_POST['sale_id'] ?? 0);
         $delete = $pdo->prepare('DELETE FROM sales WHERE id = ?');

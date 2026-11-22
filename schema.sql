@@ -42,9 +42,12 @@ CREATE TABLE IF NOT EXISTS sales (
   address VARCHAR(255) NOT NULL DEFAULT '',
   neighborhood VARCHAR(150) NOT NULL DEFAULT '',
   status VARCHAR(40) NOT NULL DEFAULT 'sold',
+  liquidation_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  liquidated_at DATETIME NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  INDEX idx_sales_created_at (created_at)
+  INDEX idx_sales_created_at (created_at),
+  INDEX idx_sales_liquidation_status_date (liquidation_status, liquidated_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS sale_items (
